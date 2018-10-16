@@ -1,0 +1,97 @@
+import React from 'react';
+import { View, Text, Button, StyleSheet, Dimensions } from 'react-native';
+
+import { connect } from 'react-redux';
+import {
+  createNavigator,
+  createNavigationContainer,
+  SwitchRouter,
+} from 'react-navigation';
+import { DrawerLayout } from 'react-native-gesture-handler';
+
+export const createCustomDrawerNavigator = (routeConfigMap, config = {}) => {
+  // Clean the routeMap
+  let router = SwitchRouter(routeConfigMap, config);
+  let NavigatorComponent = createNavigator(
+    CustomDrawerNavigator,
+    router,
+    config
+  );
+
+  return createNavigationContainer(NavigatorComponent);
+};
+
+class CustomDrawerNavigator extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  _renderDrawerContents(activeKey) {
+    let { navigation } = this.props;
+    const pages = {
+      a: {},
+      b: {},
+      c: null,
+      d: {},
+    };
+
+    return (
+      <View style={styles.drawerContainer}>
+        {navigation.state.routes.map(({ routeName, key }) => {
+          // Hide here...
+          if (pages[key.toLowerCase()] !== null) {
+            return (
+              <Button
+                key={key}
+                color={key === activeKey ? null : '#888'}
+                onPress={() => navigation.navigate(routeName)}
+                title={routeName}
+              />
+            );
+          }
+        })}
+      </View>
+    );
+  }
+
+  render() {
+    let { state } = this.props.navigation;
+    let activeKey = state.routes[state.index].key;
+    let activeDescriptor = this.props.descriptors[activeKey];
+    let ScreenComponent = activeDescriptor.getComponent();
+
+    console.log('Drawer Content', this.props);
+
+    return (
+      <DrawerLayout
+        drawerType="slide"
+        renderNavigationView={() => this._renderDrawerContents(activeKey)}>
+        <ScreenComponent
+          navigation={activeDescriptor.navigation}
+          screenProps={this.props.screenProps}
+        />
+      </DrawerLayout>
+    );
+  }
+}
+
+const mapStateToProps = state => {
+  return {
+    pages: state.nav.pages, //not received 
+  };
+};
+
+const mapDispatchToProps = {};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(CustomDrawerNavigator);
+
+const styles = StyleSheet.create({
+  drawerContainer: {
+    backgroundColor: '#eee',
+    paddingTop: 40,
+    height: Dimensions.get('window').height,
+  },
+});
